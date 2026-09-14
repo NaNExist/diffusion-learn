@@ -1,0 +1,22 @@
+# 自动下载的数据、训练权重和生成图片通常不提交到代码仓库。
+data/
+outputs/
+
+# Python 运行缓存。
+__pycache__/
+*.py[cod]
+
+# 本地虚拟环境与工具缓存。
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# 编辑器和操作系统生成的无关文件。
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
