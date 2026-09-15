@@ -18,6 +18,7 @@ from visualize import save_loss_curve
 DATA_DIR = "data"
 SOURCE_DIGIT = 0
 TARGET_DIGIT = 1
+RESHUFFLE_PAIRS_EACH_EPOCH = False  # True：从第二轮起，每个 epoch 重新打乱 target 配对
 OUTPUT_DIR = f"outputs/bridge_{SOURCE_DIGIT}_to_{TARGET_DIGIT}"
 BATCH_SIZE = 256
 EPOCHS = 60                    # 条件类别变换通常比无条件 MNIST 多训练几轮
@@ -36,6 +37,7 @@ def main() -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("使用设备:", device)
     print(f"训练数字 bridge: {SOURCE_DIGIT} → {TARGET_DIGIT}")
+    print("配对方式:", "每 epoch 重配" if RESHUFFLE_PAIRS_EACH_EPOCH else "固定配对")
 
     transform = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))]
@@ -47,6 +49,7 @@ def main() -> None:
         batch_size=BATCH_SIZE,
         shuffle=True,
         num_workers=NUM_WORKERS,
+        persistent_workers=False,  # 每轮新建 worker，使其读取更新后的配对
         pin_memory=device.type == "cuda",
     )
 
@@ -59,6 +62,8 @@ def main() -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     for epoch in range(EPOCHS):
+        if RESHUFFLE_PAIRS_EACH_EPOCH and epoch > 0:
+            dataset.reshuffle_pairs()
         model.train()
         running_loss = 0.0
         progress = tqdm(
@@ -86,6 +91,8 @@ def main() -> None:
                 "method": "diffusion_bridge",
                 "source_digit": SOURCE_DIGIT,
                 "target_digit": TARGET_DIGIT,
+                "reshuffle_pairs_each_epoch": RESHUFFLE_PAIRS_EACH_EPOCH,
+                "pair_seed": SEED,
                 "bridge_sigma": BRIDGE_SIGMA,
                 "time_epsilon": TIME_EPSILON,
                 "base_channels": BASE_CHANNELS,

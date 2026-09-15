@@ -50,7 +50,8 @@ target velocity = x_data - z
 ### Diffusion Bridge
 
 教学版 bridge 默认学习 MNIST `0 → 1`，也可以在训练脚本顶部改成任意两个
-不同数字。固定配对的 source 和 target 之间使用带端点约束的随机插值：
+不同数字。source 和 target 默认固定配对，也可以每个 epoch 重配。
+配对端点之间使用带端点约束的随机插值：
 
 ```text
 x_t = (1-t) * source + t * target
@@ -133,6 +134,12 @@ python sample_bridge.py
    定义的 loss 数值大小。
 4. 在 `train_bridge.py` 中改变 `SOURCE_DIGIT`、`TARGET_DIGIT` 和
    `BRIDGE_SIGMA`，观察类别跨度与路径随机性带来的变化。
+5. 将 `train_bridge.py` 顶部的 `RESHUFFLE_PAIRS_EACH_EPOCH` 设为 `True`，
+   从第二个 epoch 起重新打乱 target 配对；默认 `False` 保持固定配对。
+   两种模式的首轮配对相同，重配不改变两端样本池，轮内 target 不重复。
+   相同种子和重配调用次数可复现配对，且配对随机数不影响模型初始化或训练噪声。
+   对比时为两次训练设置不同的 `OUTPUT_DIR`，采样时相应修改 `CHECKPOINT`
+   和 `OUTPUT_DIR`。
 
 所有结果保存在 `outputs/`。`visualize.py` 只负责画图，核心数学过程不依赖
 matplotlib。

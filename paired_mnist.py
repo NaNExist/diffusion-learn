@@ -1,4 +1,4 @@
-"""为数字类别 bridge 构造固定、可复现的 MNIST 端点配对。"""
+"""为数字类别 bridge 构造可复现的 MNIST 端点配对，支持每轮重配。"""
 
 from typing import Tuple
 
@@ -12,6 +12,7 @@ class PairedMNIST(Dataset):
     例如 source_digit=0、target_digit=1 时，每个样本都是一张 0 和一张 1。
     两类样本数通常不同，因此数据集长度取较小值，不会偷偷重复某一端点。
     ``pair_seed`` 只负责打乱配对关系，不改变训练的全局随机种子。
+    默认保持固定配对；调用 ``reshuffle_pairs()`` 只重排已有 target。
     """
 
     def __init__(
@@ -35,9 +36,15 @@ class PairedMNIST(Dataset):
         target_order = torch.randperm(len(target_indices), generator=generator)[:pair_count]
         self.source_indices = source_indices[source_order].tolist()
         self.target_indices = target_indices[target_order].tolist()
+        self._pair_generator = generator
         self.mnist_dataset = mnist_dataset
         self.source_digit = source_digit
         self.target_digit = target_digit
+
+    def reshuffle_pairs(self) -> None:
+        """重新打乱 target 的配对顺序，保持两端样本池和 source 顺序不变。"""
+        order = torch.randperm(len(self.target_indices), generator=self._pair_generator)
+        self.target_indices = [self.target_indices[i] for i in order.tolist()]
 
     def __len__(self) -> int:
         return len(self.source_indices)
